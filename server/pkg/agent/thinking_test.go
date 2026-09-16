@@ -618,6 +618,39 @@ func TestThinkingControlSupportedMatchesTokenGate(t *testing.T) {
 	}
 }
 
+// TestBuiltinRuntimeIdentitiesMatchTheirFamily requires every registered
+// runtime identity to answer the reasoning-effort gate exactly as its protocol
+// family does. An identity is a derivative of the family's CLI with the same
+// injection path — piBackend applies --thinking for pi and omp alike — so an
+// identity answering differently from its family is a wiring bug: omp had no
+// providerThinkingEnums entry at all until MUL-7412, which rejected every
+// level while the family accepted them. The probe set mixes fixed-enum tokens,
+// a deliberately unexposed one, and a bogus token so the check stays valid for
+// identities on dynamic-catalog families too.
+func TestBuiltinRuntimeIdentitiesMatchTheirFamily(t *testing.T) {
+	t.Parallel()
+	if len(BuiltinRuntimes) == 0 {
+		t.Fatal("no built-in runtime identities registered")
+	}
+	probes := []string{"off", "minimal", "medium", "max", "auto", "not-a-level"}
+	for _, desc := range BuiltinRuntimes {
+		if desc.ID == desc.ProtocolFamily {
+			t.Errorf("built-in runtime %q names its own ID as its protocol family", desc.ID)
+			continue
+		}
+		if got, want := ThinkingControlSupported(desc.ID), ThinkingControlSupported(desc.ProtocolFamily); got != want {
+			t.Errorf("ThinkingControlSupported(%q) = %v, but family %q answers %v",
+				desc.ID, got, desc.ProtocolFamily, want)
+		}
+		for _, probe := range probes {
+			if got, want := IsKnownThinkingValue(desc.ID, probe), IsKnownThinkingValue(desc.ProtocolFamily, probe); got != want {
+				t.Errorf("IsKnownThinkingValue(%q, %q) = %v, but family %q answers %v",
+					desc.ID, probe, got, desc.ProtocolFamily, want)
+			}
+		}
+	}
+}
+
 // TestCodexAdvertisedLevelsArePersistable pins the catalog → API contract:
 // every effort token Codex discovery can label (a key in codexEffortLabel)
 // must pass the server's Create/Update enum gate. Otherwise the daemon

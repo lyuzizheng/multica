@@ -867,29 +867,23 @@ var providerThinkingEnums = map[string]map[string]bool{
 	},
 	// Pi owns a fixed CLI vocabulary; RPC discovery narrows this universe to
 	// the exact subset supported by each model before execution.
-	"pi": {
-		"off":     true,
-		"minimal": true,
-		"low":     true,
-		"medium":  true,
-		"high":    true,
-		"xhigh":   true,
-		"max":     true,
-	},
+	"pi": thinkingVocabularySet(piThinkingLevelOrder),
 	// omp (Oh-My-Pi) dispatches to the pi backend (see BuiltinRuntimes), so it
 	// inherits pi's fixed CLI vocabulary; discoverOmpModels narrows it to each
 	// model's advertised efforts before execution. `auto` is deliberately absent
 	// even though omp's --thinking accepts it — see ompThinkingFromCatalogEntry
-	// (MUL-7412).
-	"omp": {
-		"off":     true,
-		"minimal": true,
-		"low":     true,
-		"medium":  true,
-		"high":    true,
-		"xhigh":   true,
-		"max":     true,
-	},
+	// (MUL-7412). Both entries derive from piThinkingLevelOrder so a vocabulary
+	// change cannot update one and strand the other.
+	"omp": thinkingVocabularySet(piThinkingLevelOrder),
+}
+
+// thinkingVocabularySet turns a token list into the accept-gate map.
+func thinkingVocabularySet(levels []string) map[string]bool {
+	set := make(map[string]bool, len(levels))
+	for _, level := range levels {
+		set[level] = true
+	}
+	return set
 }
 
 // thinkingDynamicCatalogProviders are the runtimes whose effort vocabulary is
